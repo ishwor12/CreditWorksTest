@@ -72,7 +72,7 @@ namespace VehicleManagement.Domain.Validations
         /// Helper method: takes a number and answers true or false rounding based on 2 digits decimal place.
         /// </summary>
         /// <param name="value"></param>
-        /// <returns></returns>
+        /// <returns>True or False</returns>
 
         private static bool HasMoreThanTwoDecimals(decimal value) => decimal.Round(value, 2) != value;
 
