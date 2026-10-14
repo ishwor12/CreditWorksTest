@@ -61,9 +61,9 @@ namespace VehicleManagement.Domain.Validations
                 }
             }
 
-            if (ordered[^1].MaxWeightKg is not null)
+            if (ordered[ordered.Count - 1].MaxWeightKg is not null)
             {
-                errors.Add($"The highest category '{ordered[^1].Name}' must have no upper limit.");
+                errors.Add($"The highest category '{ordered[ordered.Count - 1].Name}' must have no upper limit.");
             }
 
             return errors;
