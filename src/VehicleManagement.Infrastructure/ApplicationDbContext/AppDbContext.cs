@@ -2,11 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VehicleManagement.Application.Abstractions;
 using VehicleManagement.Domain.Entities;
 
 namespace VehicleManagement.Infrastructure.ApplicationDbContext
 {
-    public  class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+    public  class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options),IAppDbContext
     {
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
