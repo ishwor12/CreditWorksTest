@@ -11,7 +11,7 @@ using VehicleManagement.Infrastructure.ApplicationDbContext;
 namespace VehicleManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261014070254_InitialCreate")]
+    [Migration("20261015061859_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

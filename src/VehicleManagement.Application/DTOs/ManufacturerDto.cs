@@ -4,7 +4,10 @@ using System.Text;
 
 namespace VehicleManagement.Application.DTOs
 {
-    internal class ManufacturerDto
+    public class ManufacturerDto
     {
+        public int Id { get; set; }
+
+        public required string  Name { get; set; } 
     }
 }
