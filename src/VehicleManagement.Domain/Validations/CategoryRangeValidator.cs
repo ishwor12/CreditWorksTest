@@ -21,9 +21,9 @@ namespace VehicleManagement.Domain.Validations
                 return errors;
             }
 
-            var ordered = categories.OrderBy(c => c.MinWeightKg).ToList();
+            var sorted = categories.OrderBy(c => c.MinWeightKg).ToList();
 
-            foreach (var category in ordered)
+            foreach (var category in sorted)
             {
                 if (HasMoreThanTwoDecimals(category.MinWeightKg) ||
                     (category.MaxWeightKg is { } boundary && HasMoreThanTwoDecimals(boundary)))
@@ -37,33 +37,36 @@ namespace VehicleManagement.Domain.Validations
                 }
             }
 
-            if (ordered[0].MinWeightKg != 0m)
+            var lowest = sorted[0];
+            if (lowest.MinWeightKg != 0)
             {
-                errors.Add($"The lowest category must start at 0 kg, but '{ordered[0].Name}' started at {ordered[0].MinWeightKg} kg.");
+                errors.Add($"The lowest category must start at 0 kg, but '{lowest.Name}' starts at {lowest.MinWeightKg} kg.");
             }
 
             // Logic:Adjacent categories must meet exactly: previous Max == next Min .
-            for (var i = 0; i < ordered.Count - 1; i++)
+            for (var i = 0; i < sorted.Count - 1; i++)
             {
-                var (current, next) = (ordered[i], ordered[i + 1]);
+              var current = sorted[i];
+            var next = sorted[i + 1];
 
-                if (current.MaxWeightKg is not { } upper)
+                if (current.MaxWeightKg == null)
                 {
                     errors.Add($"'{current.Name}' has no upper limit, so it overlaps '{next.Name}'.");
                 }
-                else if (upper < next.MinWeightKg)
+                else if (current.MaxWeightKg < next.MinWeightKg)
                 {
-                    errors.Add($"There is a gap between {upper} kg and {next.MinWeightKg} kg ('{current.Name}' to '{next.Name}').");
+                    errors.Add($"There is a gap between {current.MaxWeightKg} kg and {next.MinWeightKg} kg ('{current.Name}' to '{next.Name}').");
                 }
-                else if (upper > next.MinWeightKg)
+                else if (current.MaxWeightKg > next.MinWeightKg)
                 {
-                    errors.Add($"'{current.Name}' overlaps '{next.Name}' between {next.MinWeightKg} kg and {upper} kg.");
+                    errors.Add($"'{current.Name}' overlaps '{next.Name}' between {next.MinWeightKg} kg and {current.MaxWeightKg} kg.");
                 }
             }
 
-            if (ordered[ordered.Count - 1].MaxWeightKg is not null)
+            var highest = sorted[sorted.Count - 1];
+            if (highest.MaxWeightKg != null)
             {
-                errors.Add($"The highest category '{ordered[ordered.Count - 1].Name}' must have no upper limit.");
+                errors.Add($"The highest category '{highest.Name}' must have no upper limit.");
             }
 
             return errors;

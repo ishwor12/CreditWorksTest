@@ -6,6 +6,7 @@
     <Project Path="src/VehicleManagement.Infrastructure/VehicleManagement.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/VehicleManagement.IntegrationTests/VehicleManagement.IntegrationTests.csproj" />
     <Project Path="tests/VehicleManagement.UnitTests/VehicleManagement.UnitTests.csproj" />
   </Folder>
 </Solution>
