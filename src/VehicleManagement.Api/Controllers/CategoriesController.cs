@@ -21,5 +21,25 @@ namespace VehicleManagement.Api.Controllers
             var categories = await _categoryService.GetAllAsync();
             return Ok(categories);
         }
+        [HttpPost]
+        public async Task<ActionResult<CategoryDto>> Create(SaveCategoryRequest request)
+        {
+            var category = await _categoryService.CreateAsync(request);
+            return StatusCode(StatusCodes.Status201Created, category);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<CategoryDto>> Update(int id, SaveCategoryRequest request)
+        {
+            var category = await _categoryService.UpdateAsync(id, request);
+            return Ok(category);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _categoryService.DeleteAsync(id);
+            return NoContent();
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace VehicleManagement.Application
         {
             services.AddScoped<IManufacturerService, ManufacturerService>();
             services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IVehicleService, VehicleService>();
             return services;
         }
     }
