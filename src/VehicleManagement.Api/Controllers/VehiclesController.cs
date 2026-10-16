@@ -14,7 +14,12 @@ namespace VehicleManagement.Api.Controllers
         {
             _vehicleService = vehicleService;
         }
-
+        [HttpGet]
+        public async Task<ActionResult<List<VehicleDto>>> GetAll([FromQuery] string? sortBy, [FromQuery] bool descending = false)
+        {
+            var vehicles = await _vehicleService.GetAllAsync(sortBy, descending);
+            return Ok(vehicles);
+        }
         [HttpPost]
         public async Task<ActionResult<VehicleDto>> Create(CreateVehicleRequest request)
         {

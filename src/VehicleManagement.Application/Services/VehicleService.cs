@@ -20,6 +20,44 @@ namespace VehicleManagement.Application.Services
         {
             _dbcontext = dbcontext;
         }
+        public async Task<List<VehicleDto>> GetAllAsync(string? sortBy, bool descending)
+        {
+            var sortField = (sortBy ?? "owner").Trim().ToLowerInvariant();
+
+            // AsNoTracking: we only read, so EF doesn't need to watch these rows for changes.
+            IQueryable<Vehicle> query = _dbcontext.Vehicles.AsNoTracking().Include(v => v.Manufacturer);
+
+            // Sorting runs in SQL. Each branch picks the column and the direction.
+            IOrderedQueryable<Vehicle> ordered;
+
+            if (sortField == "owner")
+            {
+                ordered = descending ? query.OrderByDescending(v => v.OwnerName) : query.OrderBy(v => v.OwnerName);
+            }
+            else if (sortField == "manufacturer")
+            {
+                // The "!" tells the compiler that Manufacturer is loaded by the Include above.
+                ordered = descending ? query.OrderByDescending(v => v.Manufacturer!.Name) : query.OrderBy(v => v.Manufacturer!.Name);
+            }
+            else if (sortField == "year")
+            {
+                ordered = descending ? query.OrderByDescending(v => v.YearOfManufacture) : query.OrderBy(v => v.YearOfManufacture);
+            }
+            else if (sortField == "weight")
+            {
+                ordered = descending ? query.OrderByDescending(v => v.WeightKg) : query.OrderBy(v => v.WeightKg);
+            }
+            else
+            {
+                throw new ValidationFailedException("Sort by must be one of: owner, manufacturer, year, weight.");
+            }
+
+            // The Id tie-breaker keeps the order stable when two vehicles share the same value.
+            var vehicles = await ordered.ThenBy(v => v.Id).ToListAsync();
+            var categories = await _dbcontext.VehicleCategories.ToListAsync();
+
+            return vehicles.Select(v => ToDto(v, v.Manufacturer!.Name, categories)).ToList();
+        }
         public async Task<VehicleDto> CreateAsync(CreateVehicleRequest request)
         {
             var errors = VehicleRequestValidator.Validate(request, DateTime.UtcNow.Year);
@@ -48,7 +86,6 @@ namespace VehicleManagement.Application.Services
             var categories = await _dbcontext.VehicleCategories.ToListAsync();
             return ToDto(vehicle, manufacturer.Name, categories);
         }
-
         //  category are calculated from  weight,never stored on vehicle itself.
         private static VehicleDto ToDto(Vehicle vehicle, string manufacturerName, List<VehicleCategory> categories)
         {

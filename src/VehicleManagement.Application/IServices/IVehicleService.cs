@@ -8,5 +8,6 @@ namespace VehicleManagement.Application.IServices
     public interface IVehicleService
     {
         Task<VehicleDto> CreateAsync(CreateVehicleRequest request);
+        Task<List<VehicleDto>> GetAllAsync(string? sortBy, bool descending);
     }
 }
