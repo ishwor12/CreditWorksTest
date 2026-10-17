@@ -93,12 +93,10 @@ const VehicleList = ({ refreshKey }) => {
               <td>{vehicle.manufacturerName}</td>
               <td>{vehicle.yearOfManufacture}</td>
               <td>{vehicle.weightKg.toFixed(2)}</td>
-              <td>
-                <CategoryIcon
-                  iconKey={vehicle.categoryIconKey}
-                  name={vehicle.categoryName}
-                />
-              </td>
+                  <td>
+                      <CategoryIcon iconKey={vehicle.categoryIconKey} name={vehicle.categoryName} />
+                  </td>
+              
             </tr>
           ))}
         </tbody>
