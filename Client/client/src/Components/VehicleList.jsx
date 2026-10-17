@@ -3,7 +3,7 @@ import CategoryIcon from "./CategoryIcon";
 
 const headerStyle = { cursor: "pointer" };
 
-const VehicleList = () => {
+const VehicleList = ({ refreshKey }) => {
   const [vehicles, setVehicles] = useState([]);
   const [sortBy, setSortBy] = useState("owner");
   const [descending, setDescending] = useState(false);
@@ -35,7 +35,7 @@ const VehicleList = () => {
     }
 
     loadVehicles();
-  }, [sortBy, descending]);
+  }, [sortBy, descending, refreshKey]);
 
   function handleHeaderClick(column) {
     if (column === sortBy) {
