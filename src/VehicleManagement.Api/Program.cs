@@ -27,14 +27,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
-
+    
+}
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
 }
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 public partial class Program { }

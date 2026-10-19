@@ -81,3 +81,10 @@ button {
     width: auto;
   }
 }
+.name-input {
+  width: 150px;
+}
+
+.range-input {
+  width: 100px;
+}
