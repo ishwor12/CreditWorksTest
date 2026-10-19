@@ -1,7 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VehicleManagement.Application.Abstractions;
 using VehicleManagement.Application.DTOs;
 using VehicleManagement.Application.Exceptions;
@@ -9,150 +6,105 @@ using VehicleManagement.Application.IServices;
 using VehicleManagement.Application.Validation;
 using VehicleManagement.Domain.Entities;
 using VehicleManagement.Domain.Validations;
+namespace VehicleManagement.Application.Services;
 
-namespace VehicleManagement.Application.Services
+public class CategoryService : ICategoryService
 {
-    public class CategoryService : ICategoryService
+    private readonly IAppDbContext _db;
+
+    public CategoryService(IAppDbContext db)
     {
-        private readonly IAppDbContext _dbcontext;
+        _db = db;
+    }
 
-        public CategoryService(IAppDbContext dbcontext)
-        {
-            _dbcontext = dbcontext;
-        }
-        public async Task<List<CategoryDto>> GetAllAsync()
-        {
-            return await _dbcontext.VehicleCategories
-                .OrderBy(c => c.MinWeightKg)
-                .Select(c => new CategoryDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    IconKey = c.IconKey,
-                    MinWeightKg = c.MinWeightKg,
-                    MaxWeightKg = c.MaxWeightKg
-                })
-                .ToListAsync();
-        }
-        public async Task<CategoryDto> CreateAsync(SaveCategoryRequest request)
-        {
-            var categories = await _dbcontext.VehicleCategories.ToListAsync();
+    public async Task<List<CategoryDto>> GetAllAsync()
+    {
+        var categories = await _db.VehicleCategories.OrderBy(c => c.MinWeightKg).ToListAsync();
+        return categories.Select(ToDto).ToList();
+    }
 
-            ThrowIfInvalid(CategoryRequestValidator.Validate(request, categories));
+    public async Task<List<CategoryDto>> SaveAllAsync(List<CategoryInputDto> inputs)
+    {
+        // 1. Check the names and icons.
+        var errors = CategoryInputValidator.Validate(inputs);
 
-            var category = new VehicleCategory
+        // 2. Build the proposed categories as plain objects. Nothing is saved yet.
+        var proposed = new List<VehicleCategory>();
+        foreach (var input in inputs)
+        {
+            proposed.Add(new VehicleCategory
             {
-                Name = request.Name.Trim(),
-                IconKey = request.IconKey.Trim(),
-                MinWeightKg = request.MinWeightKg
-            };
-
-            categories.Add(category);
-            _dbcontext.VehicleCategories.Add(category);
-
-            RecalculateUpperBounds(categories);
-            ThrowIfInvalid(CategoryRangeValidator.Validate(categories));
-
-            // One SaveChanges is one database transaction, so the whole change succeeds or fails together.
-            await _dbcontext.SaveChangesAsync();
-            return ToDto(category);
+                Name = (input.Name ?? string.Empty).Trim(),
+                IconKey = (input.IconKey ?? string.Empty).Trim(),
+                MinWeightKg = input.MinWeightKg,
+                MaxWeightKg = input.MaxWeightKg
+            });
         }
 
-        public async Task<CategoryDto> UpdateAsync(int id, SaveCategoryRequest request)
+        // 3. Check the whole set of ranges: no gaps, no overlaps, every weight covered.
+        if (inputs.Count > 0)
         {
-            var categories = await _dbcontext.VehicleCategories.ToListAsync();
-
-            var category = categories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-            {
-                throw new NotFoundException($"Category {id} was not found.");
-            }
-
-            var otherCategories = categories.Where(c => c.Id != id).ToList();
-            ThrowIfInvalid(CategoryRequestValidator.Validate(request, otherCategories));
-
-            category.Name = request.Name.Trim();
-            category.IconKey = request.IconKey.Trim();
-            category.MinWeightKg = request.MinWeightKg;
-
-            RecalculateUpperBounds(categories);
-            ThrowIfInvalid(CategoryRangeValidator.Validate(categories));
-
-            await _dbcontext.SaveChangesAsync();
-            return ToDto(category);
+            errors.AddRange(CategoryRangeValidator.Validate(proposed));
         }
 
-        public async Task DeleteAsync(int id)
+        if (errors.Count > 0)
         {
-            var categories = await _dbcontext.VehicleCategories.ToListAsync();
-
-            var category = categories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-            {
-                throw new NotFoundException($"Category {id} was not found.");
-            }
-
-            if (categories.Count == 1)
-            {
-                throw new ValidationFailedException("The last remaining category cannot be deleted.");
-            }
-
-            var wasLowest = category.MinWeightKg == categories.Min(c => c.MinWeightKg);
-
-            categories.Remove(category);
-            _dbcontext.VehicleCategories.Remove(category);
-
-            // If the lowest category is deleted, the next one takes over the bottom of the range.
-            if (wasLowest)
-            {
-                var newLowest = categories.OrderBy(c => c.MinWeightKg).First();
-                newLowest.MinWeightKg = 0;
-            }
-
-            // The category below absorbs the deleted range, because its end follows the next start.
-            RecalculateUpperBounds(categories);
-            ThrowIfInvalid(CategoryRangeValidator.Validate(categories));
-
-            await _dbcontext.SaveChangesAsync();
+            throw new ValidationFailedException(errors);
         }
 
-        // Each category ends where the next one starts. The highest category has no end.
-        private static void RecalculateUpperBounds(List<VehicleCategory> categories)
-        {
-            var sorted = categories.OrderBy(c => c.MinWeightKg).ToList();
+        // 4. Everything is valid, so apply the changes.
+        var existing = await _db.VehicleCategories.ToListAsync();
 
-            for (var i = 0; i < sorted.Count; i++)
+        foreach (var input in inputs)
+        {
+            if (input.Id != null && !existing.Any(c => c.Id == input.Id))
             {
-                if (i == sorted.Count - 1)
-                {
-                    sorted[i].MaxWeightKg = null;
-                }
-                else
-                {
-                    sorted[i].MaxWeightKg = sorted[i + 1].MinWeightKg;
-                }
+                throw new ValidationFailedException($"Category {input.Id} no longer exists. Reload the page and try again.");
             }
         }
 
-        private static void ThrowIfInvalid(IEnumerable<string> errors)
+        // Categories that are no longer in the list are deleted.
+        foreach (var category in existing)
         {
-            var errorList = errors.ToList();
-            if (errorList.Count > 0)
+            if (!inputs.Any(i => i.Id == category.Id))
             {
-                throw new ValidationFailedException(errorList);
+                _db.VehicleCategories.Remove(category);
             }
         }
 
-        private static CategoryDto ToDto(VehicleCategory category)
+        for (var i = 0; i < inputs.Count; i++)
         {
-            return new CategoryDto
+            var values = proposed[i];
+
+            if (inputs[i].Id == null)
             {
-                Id = category.Id,
-                Name = category.Name,
-                IconKey = category.IconKey,
-                MinWeightKg = category.MinWeightKg,
-                MaxWeightKg = category.MaxWeightKg
-            };
+                _db.VehicleCategories.Add(values);
+            }
+            else
+            {
+                var category = existing.First(c => c.Id == inputs[i].Id);
+                category.Name = values.Name;
+                category.IconKey = values.IconKey;
+                category.MinWeightKg = values.MinWeightKg;
+                category.MaxWeightKg = values.MaxWeightKg;
+            }
         }
+
+        // One SaveChanges is one database transaction, so everything succeeds or fails together.
+        await _db.SaveChangesAsync();
+
+        return await GetAllAsync();
+    }
+
+    private static CategoryDto ToDto(VehicleCategory category)
+    {
+        return new CategoryDto
+        {
+            Id = category.Id,
+            Name = category.Name,
+            IconKey = category.IconKey,
+            MinWeightKg = category.MinWeightKg,
+            MaxWeightKg = category.MaxWeightKg
+        };
     }
 }

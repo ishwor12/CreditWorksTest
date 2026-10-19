@@ -8,8 +8,8 @@ namespace VehicleManagement.Application.IServices
     public interface ICategoryService
     {
         Task<List<CategoryDto>> GetAllAsync();
-        Task<CategoryDto> CreateAsync(SaveCategoryRequest request);
-        Task<CategoryDto> UpdateAsync(int id, SaveCategoryRequest request);
-        Task DeleteAsync(int id);
+
+        // Saves the whole category list in 1 time: updates, new rows and deleted rows.
+        Task<List<CategoryDto>> SaveAllAsync(List<CategoryInputDto> inputs);
     }
 }
