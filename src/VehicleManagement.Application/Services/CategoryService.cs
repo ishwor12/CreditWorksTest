@@ -59,7 +59,7 @@ public class CategoryService : ICategoryService
         {
             if (input.Id != null && !existing.Any(c => c.Id == input.Id))
             {
-                throw new ValidationFailedException($"Category {input.Id} no longer exists. Reload the page and try again.");
+                throw new NotFoundException($"Category {input.Id} was not found. Reload the page and try again.");
             }
         }
 
