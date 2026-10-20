@@ -1,7 +1,7 @@
 1.CreditWorksTest
 CreditWorks Software Engineer – Technical Programming Assignment
 
-2.Vehicle Management
+2.Vehicle Management(Using Clean Architecture)
 
 - Add vehicles and view them in a sorted list.
 - A vehicle's category (with icon) is worked out automatically from its weight.

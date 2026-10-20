@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import CategoryIcon from "./CategoryIcon";
+import { vehiclesApi } from "../API/vehiclesApi";
 
 const headerStyle = { cursor: "pointer" };
 
@@ -17,13 +18,10 @@ const VehicleList = ({ refreshKey }) => {
       setError("");
 
       try {
-        const response = await fetch(
-          `/api/vehicles?sortBy=${sortBy}&descending=${descending}`,
-        );
+        const response = await vehiclesApi.getAll(sortBy, descending);
 
         if (response.ok) {
-          const data = await response.json();
-          setVehicles(data);
+          setVehicles(response.data);
         } else {
           setError("Could not load the vehicles.");
         }
@@ -93,10 +91,12 @@ const VehicleList = ({ refreshKey }) => {
               <td>{vehicle.manufacturerName}</td>
               <td>{vehicle.yearOfManufacture}</td>
               <td>{vehicle.weightKg.toFixed(2)}</td>
-                  <td>
-                      <CategoryIcon iconKey={vehicle.categoryIconKey} name={vehicle.categoryName} />
-                  </td>
-              
+              <td>
+                <CategoryIcon
+                  iconKey={vehicle.categoryIconKey}
+                  name={vehicle.categoryName}
+                />
+              </td>
             </tr>
           ))}
         </tbody>

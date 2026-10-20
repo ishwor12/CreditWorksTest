@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import ErrorList from "./ErrorList";
+import { manufacturersApi } from "../API/manufacturersApi";
+import { vehiclesApi } from "../API/vehiclesApi";
 
 const VehicleForm = ({ onVehicleAdded }) => {
   const [manufacturers, setManufacturers] = useState([]);
@@ -15,11 +17,10 @@ const VehicleForm = ({ onVehicleAdded }) => {
   useEffect(() => {
     async function loadManufacturers() {
       try {
-        const response = await fetch("/api/manufacturers");
+        const response = await manufacturersApi.getAll();
 
         if (response.ok) {
-          const data = await response.json();
-          setManufacturers(data);
+          setManufacturers(response.data);
         } else {
           setErrors(["Could not load the manufacturers."]);
         }
@@ -46,13 +47,8 @@ const VehicleForm = ({ onVehicleAdded }) => {
     };
 
     try {
-      const response = await fetch("/api/vehicles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newVehicle),
-      });
-
-      const data = await response.json();
+      const response = await vehiclesApi.create(newVehicle);
+      const data = response.data;
 
       if (response.ok) {
         setMessage(

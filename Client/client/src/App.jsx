@@ -1,6 +1,7 @@
 import { useState } from "react";
 import VehicleList from "./components/VehicleList";
 import VehicleForm from "./components/VehicleForm";
+import CategoryEditor from "./components/CategoryEditor"; // Ensure this file exists
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("vehicles");
